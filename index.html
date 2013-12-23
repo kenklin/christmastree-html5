@@ -83,14 +83,17 @@ function drawOrnament(x,y,d,color) {
   ctx.closePath();
 }
 
+// Mystery encoding
 function encode(msg) {
   var coding=[];
   for (var i=0; i<msg.length; i++) {
     var c=msg.charCodeAt(i)%256;
-    for (var b=0; b<8; b++) {
-      coding.push((c%2)==1);
+    var bits=[];
+    for (var b=8; b>0; b--) {
+      bits[b-1] = (c%2)==1;
       c=Math.floor(c/2);
     }
+    coding.push.apply(coding, bits);
   }
   return coding;
 }
