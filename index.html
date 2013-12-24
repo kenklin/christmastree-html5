@@ -9,12 +9,14 @@ Your browser does not support the HTML5 canvas tag.
 <a href="https://github.com/kenklin/christmastree-html5">Ken Lin</a></div>
 
 <script>
-var msg=document.getElementById('msg').textContent;
 var args={
+  msg:document.getElementById('msg').textContent,
   bgColor:'white',
   tree: {
     w:200,
     h:250,
+    hCenter:-1,
+    aspect:-1,
     color:'green'
   },
   strand: {
@@ -23,60 +25,66 @@ var args={
     y:[],
     h:4,
     color:'white',
-    wTotal:0
+    wTotal:-1
   },
   ornament: {
     h:3,
     color1:'red',
     color2:'white',
-    spacing:0
+    spacing:-1
   }
 }
-args.aspect=args.tree.w/args.tree.h;
-args.hCenter=args.tree.w/2;
+args.tree.aspect=args.tree.w/args.tree.h;
+args.tree.hCenter=args.tree.w/2;
 
 var c=document.getElementById('myCanvas');
 var ctx=c.getContext('2d');
 
 // Background
-ctx.beginPath();
-ctx.fillStyle=args.bgColor;
-ctx.fillRect(0,0,args.tree.w,args.tree.h);
-ctx.closePath();
-
-// Tree
-ctx.fillStyle=args.tree.color;
-ctx.beginPath();
-ctx.moveTo(args.hCenter,0);
-ctx.lineTo(args.tree.w,args.tree.h);
-ctx.lineTo(0,args.tree.h);
-ctx.moveTo(args.hCenter,0);
-ctx.fill();
-ctx.closePath();
-
-// Horizontal strands
-args.strand.wTotal=0;
-for (i=0; i<args.strand.cnt; i++) {
-  var y=(i+1)*args.tree.h/(args.strand.cnt+1);
-  var w=y*args.aspect;
-  var wDiv2=w/2;
-
-  // Set w[] and wTotal
-  args.strand.y.push(y);
-  args.strand.w.push(w);
-  args.strand.wTotal+=w;
-
+function drawBackground(args) {
   ctx.beginPath();
-  ctx.strokeStyle=args.strand.color;
-  ctx.lineWidth=args.strand.h;
-  ctx.moveTo(args.hCenter-(w/2),y);
-  ctx.lineTo(args.hCenter+(w/2),y);
-  ctx.stroke();
+  ctx.fillStyle=args.bgColor;
+  ctx.fillRect(0,0,args.tree.w,args.tree.h);
   ctx.closePath();
 }
 
+// Tree
+function drawTree(args) {
+  ctx.fillStyle=args.tree.color;
+  ctx.beginPath();
+  ctx.moveTo(args.tree.hCenter,0);
+  ctx.lineTo(args.tree.w,args.tree.h);
+  ctx.lineTo(0,args.tree.h);
+  ctx.moveTo(args.tree.hCenter,0);
+  ctx.fill();
+  ctx.closePath();
+}
+
+// Horizontal strands
+frunction drawStrands() {
+  args.strand.wTotal=0;
+  for (i=0; i<args.strand.cnt; i++) {
+    var y=(i+1)*args.tree.h/(args.strand.cnt+1);
+    var w=y*args.tree.aspect;
+    var wDiv2=w/2;
+
+    // Set w[] and wTotal
+    args.strand.y.push(y);
+    args.strand.w.push(w);
+    args.strand.wTotal+=w;
+
+    ctx.beginPath();
+    ctx.strokeStyle=args.strand.color;
+    ctx.lineWidth=args.strand.h;
+    ctx.moveTo(args.tree.hCenter-(w/2),y);
+    ctx.lineTo(args.tree.hCenter+(w/2),y);
+    ctx.stroke();
+    ctx.closePath();
+  }
+}
+
 // Ornaments
-function drawOrnament(x,y,d,color) {
+function drawCircle(x,y,d,color) {
   ctx.beginPath();
   ctx.fillStyle=color;
   ctx.arc(x,y,d/2,0,Math.PI*2,true); 
@@ -84,11 +92,11 @@ function drawOrnament(x,y,d,color) {
   ctx.closePath();
 }
 
-// Mystery encoding
-function encode(msg) {
+// Mystery encoding must return an array of boolean ornament placements
+function encode(args) {
   var coding=[];
   for (var i=0; i<msg.length; i++) {
-    var c=msg.charCodeAt(i)%256;
+    var c=args.msg.charCodeAt(i)%256;
     var bits=[];
     for (var b=8; b>0; b--) {
       bits[b-1] = (c%2)==1;
@@ -99,21 +107,28 @@ function encode(msg) {
   return coding;
 }
 
-var coding=encode(msg);
-var spacing=(args.strand.wTotal-(args.strand.cnt*args.ornament.h)) / coding.length;
-var c=0;
-for (var i=0; i<args.strand.cnt; i++) {
-  var y=args.strand.y[i];
-  var w=args.strand.w[i]-args.ornament.h;
-  var x=args.hCenter-(w/2);
-  var right=args.hCenter+(w/2);
+function drawOrnaments(args, encode) {
+  var coding=encode(args);
+  var spacing=(args.strand.wTotal-(args.strand.cnt*args.ornament.h)) / coding.length;
+  var c=0;
+  for (var i=0; i<args.strand.cnt; i++) {
+    var y=args.strand.y[i];
+    var w=args.strand.w[i]-args.ornament.h;
+    var x=args.tree.hCenter-(w/2);
+    var right=args.tree.hCenter+(w/2);
 
-  while (x<right) {
-    drawOrnament(x, y, args.ornament.h,
+    while (x<right) {
+      drawCircle(x, y, args.ornament.h,
                  coding[c++]?args.ornament.color1:args.ornament.color2);
-    x+=spacing;
+      x+=spacing;
+    }
   }
 }
+
+drawBackground(args);
+drawTree(args);
+drawStrands(args);
+drawOrnaments(args, encode);
 
 </script>
 
