@@ -1,6 +1,6 @@
 christmastree-html5
 ===================
-HMTL 5 canvas demo that draws a Christmas tree with mystery ornament code! :)
+Animated HMTL 5 canvas demo that draws a Christmas tree with mystery ornament code! :)
 
 ![Alt text](https://raw.github.com/kenklin/christmastree-html5/master/index.png)
 
