@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<title>HTML 5 Canvas</title>
 <body>
 
 <canvas id="myCanvas" width="200" height="250" style="border:1px solid #c3c3c3;">
@@ -9,33 +10,28 @@ Your browser does not support the HTML5 canvas tag.
 <a href="https://github.com/kenklin/christmastree-html5">Ken Lin</a></div>
 
 <script>
-var msg=document.getElementById('msg').textContent;
 var args={
-  msg:"",
+  msg:document.getElementById('msg').textContent,
   bgColor:'white',
   tree: {
     w:200,
     h:250,
-    hCenter:-1,
-    aspect:-1,
+    hCenter:null,
+    aspect:null,
     color:'green'
   },
   strand: {
-    cnt:10,
+    cnt:20,
     w:[],
     y:[],
     h:4,
     color:'white',
-    wTotal:-1
+    wTotal:null
   },
   ornament: {
-    h:3,
-    color1:'red',
-    color2:'white',
-    spacing:-1
+    h:3
   }
-}
-args.msg=document.getElementById('msg').textContent;
+};
 args.tree.aspect=args.tree.w/args.tree.h;
 args.tree.hCenter=args.tree.w/2;
 
@@ -87,6 +83,7 @@ function drawStrands(ctx,args) {
 
 // Ornaments
 function drawCircle(ctx,x,y,d,color) {
+//  if (color==="white") return;
   ctx.beginPath();
   ctx.fillStyle=color;
   ctx.arc(x,y,d/2,0,Math.PI*2,true); 
@@ -94,44 +91,66 @@ function drawCircle(ctx,x,y,d,color) {
   ctx.closePath();
 }
 
-// Mystery encoder must return a single array of boolean ornament placements
-function encode(args) {
-  var coding=[];
-  for (var i=0; i<msg.length; i++) {
+// Mystery encoder must return a single array of ornament colors
+function encode(args,padding) {
+  var colors=[];
+  var cnt=0;		// Number of ornaments in colors
+  for (var i=0; i<args.msg.length; i++) {
     var c=args.msg.charCodeAt(i)%256;
-    var bits=[];
     for (var b=8; b>0; b--) {
-      bits[b-1]=(c%2)==1;
+      const bit=(c%2)===1;
+      if (bit) {
+        colors.push(cnt?"red":"black");
+        cnt++;
+      } else {
+        colors.push(args.strand.color);
+	  }
       c=Math.floor(c/2);
+
+      for (var j=0;j<padding;j++) {
+        colors.push(args.strand.color);
+      }
     }
-    coding.push.apply(coding,bits);
   }
-  return coding;
+  return colors;
 }
 
 function drawOrnaments(ctx,args,encode) {
-  var coding=encode(args);					// boolean array of ornament placements
-  var spacing=(args.strand.wTotal-(args.strand.cnt*args.ornament.h)) / coding.length;
-  var c=0;
-  for (var i=0; i<args.strand.cnt; i++) {
-    var y=args.strand.y[i];
-    var w=args.strand.w[i]-args.ornament.h;	// drawable width for this strand
-    var x=args.tree.hCenter-(w/2);			// x pos of leftmost ornament
-    var right=args.tree.hCenter+(w/2);		// x pos of rightmost ornament
+  var colors=encode(args,2);					// boolean array of ornament placements
+  const spacing=(args.strand.wTotal-(args.strand.cnt*args.ornament.h)) / colors.length;
+  var prev=null;								// previous animate
 
-    while (x<right) {
-      drawCircle(ctx,x,y,args.ornament.h,
-                 coding[c++]?args.ornament.color1:args.ornament.color2);
-      x+=spacing;
-    }
+  function animate(timestamp) {
+    if (timestamp-prev>=50) {					// 20hz
+      prev=timestamp;
+
+      var c=0;
+      for (var i=0; i<args.strand.cnt; i++) {
+        const y=args.strand.y[i];
+        const w=args.strand.w[i]-args.ornament.h;	// drawable width for this strand
+        var x=args.tree.hCenter-(w/2);			// x pos of leftmost ornament
+        const right=args.tree.hCenter+(w/2);		// x pos of rightmost ornament
+
+        while (x<right) {
+          drawCircle(ctx,x,y,args.ornament.h,colors[c++]);
+          x+=spacing;
+        }
+      }
+
+      const color=colors.pop();
+      colors.unshift(color);
+	}
+
+    window.requestAnimationFrame(animate);
   }
+
+  window.requestAnimationFrame(animate);
 }
 
 drawBackground(ctx,args);
 drawTree(ctx,args);
 drawStrands(ctx,args);
 drawOrnaments(ctx,args,encode);
-
 </script>
 
 </body>
